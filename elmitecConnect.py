@@ -37,6 +37,43 @@ def is_number(s):
     except ValueError:
         return False
 
+def getTcp(s, TCPString, isFlt=True, isInt=False, asIs=False):
+    s.send(TCPString.encode('utf-8'))
+    retStr = TCPBlockingReceive(s)
+    if asIs:
+        #print('is asIs = ', TCPString, retStr)
+        return retStr
+    elif isInt:
+        if is_number(retStr):
+            return int(retStr)
+        else:
+            return 0
+    elif isFlt:
+        if is_number(retStr):
+            return float(retStr)
+        else:
+            return 0.0
+    else:
+        return retStr
+
+def setTcp(s, TCPString, Value):
+    TCPString = TCPString.strip()+' '+Value.strip()
+    s.send(TCPString)
+    return TCPBlockingReceive(s)
+
+def TCPBlockingReceive(s):
+    Bytereceived = '0'
+    szData = ''
+    while ord(Bytereceived) != 0:
+        ReceivedLength = 0
+        while ReceivedLength == 0:
+            Bytereceived = s.recv(1)
+            #print('Bytereceived=',Bytereceived,'ord(Bytereceived)=',ord(Bytereceived))
+            ReceivedLength = len(Bytereceived)
+        if ord(Bytereceived) != 0:
+            szData = szData + Bytereceived.decode('utf-8')
+    return szData
+
 class elmitecConnect:
     Leem2000Connected = False
     UviewConnected = False
@@ -69,11 +106,14 @@ class elmitecConnect:
           
     def __exit__(self, type, value, traceback):
         #print("Destroying", self)
-        if self.Leem2000Connected:
-            #print('Exit without closing connections... close connections')
-            self.s.send('clo')
-            self.s.close()
-            self.Leem2000Connected = False
+        try:
+            self.oLeem.disconnect
+        except AttributeError:
+            print("oLEEM not open yet")
+        try:
+            self.oUview.disconnect
+        except AttributeError:
+            print("oUview not open yet")
 
     def __repr__(self):
         try:
@@ -120,6 +160,11 @@ class oLeem():
             self.s.send('clo')
             self.s.close()
             self.Leem2000Connected = False
+        if self.Leem2000Connected:
+            #print('Exit without closing connections... close connections')
+            self.s.send('clo')
+            self.s.close()
+            self.Leem2000Connected = False
 
     def connect(self):
         if self.Leem2000Connected:
@@ -133,7 +178,7 @@ class oLeem():
             self.s.connect((self.ip, self.port))
             self.Leem2000Connected = True
             #Start string communication
-            self.getTcp('asc', False, False, True)
+            getTcp(self.s, 'asc', False, False, True)
             #Get list of devices
             self.updateModules()
             self.updateValues()
@@ -206,7 +251,7 @@ class oLeem():
         else:
             self.Values   = {}
             for x in self.Mnemonic:
-                data = self.getTcp('get '+self.Modules[x], True, False, False)
+                data = getTcp(self.s, 'get '+self.Modules[x], True, False, False)
                 if is_number(data):
                     self.Values[x] = float(data)
 
@@ -216,7 +261,7 @@ class oLeem():
             return None
         else:
             #Get list of devices
-            self.nModules = self.getTcp('nrm', False, True, False)
+            self.nModules = getTcp(self.s, 'nrm', False, True, False)
             #Get list of devices
             self.Modules      = {}
             self.Mnemonic     = {}
@@ -227,12 +272,12 @@ class oLeem():
             self.MnemonicUp   = {}
             self.ModulesUp    = {}
             for x in range(self.nModules):
-                data = self.getTcp('nam '+str(x), False, False, True)
+                data = getTcp(self.s, 'nam '+str(x), False, False, True)
                 if not data in ['', 'no name','invalid','disabled']:
                     self.Modules[x]   = data
                     self.ModulesUp[x] = data.upper()
                     self.invModules[data.upper()] = x
-                data = self.getTcp('mne '+str(x), False, False, True)
+                data = getTcp(self.s, 'mne '+str(x), False, False, True)
                 if not data in ['', 'no name','invalid','disabled']:
                     self.Mnemonic[x]   = data
                     self.MnemonicUp[x] = data.upper()
@@ -251,7 +296,7 @@ class oLeem():
         if is_number(module):
             m = int(module)
             if m in self.Mnemonic:
-                data = self.getTcp(TCPString+str(m), False, False, True)
+                data = getTcp(self.s, TCPString+str(m), False, False, True)
                 if not data in ['','invalid'] and is_number(data):
                     return float(data)
                 else:
@@ -261,13 +306,13 @@ class oLeem():
         else:
             module = str(module)
             if module.upper() in self.invModules:
-                data = self.getTcp(TCPString+(self.invModules[module.upper()]), False, False, True)
+                data = getTcp(self.s, TCPString+(self.invModules[module.upper()]), False, False, True)
                 if (not data in ['','invalid']) and is_number(data):
                     return float(data)
                 else:
                     return 'invalid'
             elif module.upper() in self.invMnemonic:
-                data = self.getTcp(TCPString+str(self.invMnemonic[module.upper()]), False, False, True)
+                data = getTcp(self.s, TCPString+str(self.invMnemonic[module.upper()]), False, False, True)
                 if not data in ['','invalid'] and is_number(data):
                     return float(data)
                 else:
@@ -299,10 +344,10 @@ class oLeem():
             self.lastTime=time.time()            
             if is_number(module):
                 m = int(module)
-                return self.getTcp('set '+str(m)+'='+value,False, False, True) == '0'
+                return getTcp(self.s, 'set '+str(m)+'='+value,False, False, True) == '0'
             else:
                 if (module.upper() in self.MnemonicUp.values()) or (module.upper() in self.ModulesUp.values()):
-                    return self.getTcp('set '+str(module)+'='+value,False, False, True) == '0'
+                    return getTcp(self.s, 'set '+str(module)+'='+value,False, False, True) == '0'
                 else:
                     return False
 
@@ -335,7 +380,7 @@ class oLeem():
             return None
         else:
             #check if the input is a number or a string
-            data=self.getTcp('prl',False, False, True)
+            data=getTcp(self.s, 'prl',False, False, True)
             strSplit = data.partition(':')
             if strSplit[1] == ':':
                 part = data.partition('\xb5')
@@ -351,7 +396,7 @@ class oLeem():
             return None
         else:
             #check if the input is a number or a string
-            data=self.getTcp('chm',False, False, True)
+            data=getTcp(self.s, 'chm',False, False, True)
             if data != '0':
                 arr = data.split()
                 nChanges = int(arr[0])
@@ -362,43 +407,6 @@ class oLeem():
                 return (nChanges,Changes)
             else:
                 return (0,0)
-
-    def getTcp(self, TCPString, isFlt=True, isInt=False, asIs=False):
-        self.s.send(TCPString.encode('utf-8'))
-        retStr = self.TCPBlockingReceive()
-        if asIs:
-            #print('is asIs = ', TCPString, retStr)
-            return retStr
-        elif isInt:
-            if is_number(retStr):
-                return int(retStr)
-            else:
-                return 0
-        elif isFlt:
-            if is_number(retStr):
-                return float(retStr)
-            else:
-                return 0.0
-        else:
-            return retStr
-
-    def setTcp(self, TCPString, Value):
-        TCPString = TCPString.strip()+' '+Value.strip()
-        self.s.send(TCPString)
-        return self.TCPBlockingReceive()
-
-    def TCPBlockingReceive(self):
-       Bytereceived = '0'
-       szData = ''
-       while ord(Bytereceived) != 0:
-           ReceivedLength = 0
-           while ReceivedLength == 0:
-               Bytereceived = self.s.recv(1)
-               #print('Bytereceived=',Bytereceived,'ord(Bytereceived)=',ord(Bytereceived))
-               ReceivedLength = len(Bytereceived)
-           if ord(Bytereceived) != 0:
-               szData = szData + Bytereceived.decode('utf-8')
-       return szData
 
 class oUview(object):
     UviewConnected = False
@@ -445,7 +453,7 @@ class oUview(object):
             #Start string communication
             TCPString = 'asc'
             self.s.send(TCPString.encode('utf-8'))
-            data = self.TCPBlockingReceive()
+            data = TCPBlockingReceive(self.s)
 
     def testConnect(self):
         if self.UviewConnected:
@@ -533,7 +541,7 @@ class oUview(object):
         else:
             TCPString = 'exp '+str(imgFormat)+', '+str(imgContents)+', '+str(fileName)
             self.s.send(TCPString)
-            data=self.TCPBlockingReceive()
+            data=TCPBlockingReceive(self.s)
             return len(data) == 0
 
     def setAvr(self, avr='0'):
@@ -545,7 +553,7 @@ class oUview(object):
                 return
             numAvr = int(avr)
             if (numAvr >= 0) and (numAvr <= 99):
-                retVal = self.setTcp('avr', str(numAvr))
+                retVal = setTcp(self.s, 'avr', str(numAvr))
                 return retVal
 
     def getAvr(self):
@@ -555,7 +563,7 @@ class oUview(object):
         else:
             TCPString = 'avr'
             self.s.send(TCPString)
-            data=self.TCPBlockingReceive()
+            data=TCPBlockingReceive(self.s)
             if is_number(data):
                 return int(data)
             else:
@@ -568,7 +576,7 @@ class oUview(object):
         else:
             TCPString = 'asi '+str(id)
             self.s.send(TCPString)
-            return self.TCPBlockingReceive()
+            return TCPBlockingReceive(self.s)
 
     def setAcqState(self, acqState=-1):
         if not self.UviewConnected:
@@ -582,7 +590,7 @@ class oUview(object):
                 return
             TCPString = 'aip '+str(acqState)
             self.s.send(TCPString)
-            return self.TCPBlockingReceive()
+            return TCPBlockingReceive(self.s)
 
     def getAcqState(self):
         return self.aip()
@@ -594,17 +602,17 @@ class oUview(object):
         else:
             TCPString = 'aip'
             self.s.send(TCPString)
-            return self.TCPBlockingReceive() == '1'
+            return TCPBlockingReceive(self.s) == '1'
 
     def getROI(self):
         if not self.UviewConnected:
             print('Please connect first')
             return None
         else:
-            xmi = self.getTcp('xmi', False, True)
-            xma = self.getTcp('xma', False, True)
-            ymi = self.getTcp('ymi', False, True)
-            yma = self.getTcp('yma', False, True)
+            xmi = getTcp(self.s, 'xmi', False, True)
+            xma = getTcp(self.s, 'xma', False, True)
+            ymi = getTcp(self.s, 'ymi', False, True)
+            yma = getTcp(self.s, 'yma', False, True)
             return [xmi, ymi, xma, yma]
 
     def getCameraSize(self):
@@ -612,7 +620,7 @@ class oUview(object):
             print('Please connect first')
             return None
         else:
-            gcs = self.getTcp('gcs', False, False, True)
+            gcs = getTcp(self.s, 'gcs', False, False, True)
             spl = gcs.split()
             if len(spl) == 2:
                 if is_number(spl[0]) and is_number(spl[1]):
@@ -629,7 +637,7 @@ class oUview(object):
             print('Please connect first')
             return None
         else:
-            ext = self.getTcp('ext', True, False, False)
+            ext = getTcp(self.s, 'ext', True, False, False)
             return ext
 
     def setExposureTime(self, ext):
@@ -637,7 +645,7 @@ class oUview(object):
             print('Please connect first')
             return None
         else:
-            self.setTcp('ext', ext)
+            setTcp(self.s, 'ext', ext)
             return
 
     def getNrActiveMarkers(self):
@@ -646,7 +654,7 @@ class oUview(object):
             return None
         else:
             print('call nMarkersStr')
-            nMarkersStr = self.getTcp('mar -1', False, False, True)
+            nMarkersStr = getTcp(self.s, 'mar -1', False, False, True)
             print('nMarkersStr returns = ', nMarkersStr)
             nMarkers = nMarkersStr.split()
             if len(nMarkers) <= 1:
@@ -667,7 +675,7 @@ class oUview(object):
             if not is_number(marker):
                 print('Marker value must be a valid number')
                 return
-            markerInfo = self.setTcp('mar', str(marker))
+            markerInfo = setTcp(self.s, 'mar', str(marker))
             splitMarker = markerInfo.split()
             if len(splitMarker) != 7:
                 return 0
@@ -691,44 +699,6 @@ class oUview(object):
                     'type':myType,
                     'typeNr':typeNr,
                     'pos':[int(splitMarker[3]), int(splitMarker[4]), int(splitMarker[5]), int(splitMarker[6])]}
-
-    def getTcp(self, TCPString, isFlt=True, isInt=False, asIs=False):
-        self.s.send(TCPString)
-        retStr = self.TCPBlockingReceive()
-        if asIs:
-            #print('is asIs = ', TCPString, retStr)
-            return retStr
-        elif isInt:
-            if is_number(retStr):
-                return int(retStr)
-            else:
-                return 0
-        elif isFlt:
-            if is_number(retStr):
-                return float(retStr)
-            else:
-                return 0.0
-        else:
-            return retStr
-
-    def setTcp(self, TCPString, Value):
-        TCPString = TCPString.strip()+' '+Value.strip()
-        self.s.send(TCPString)
-        return self.TCPBlockingReceive()
-
-    def TCPBlockingReceive(self):
-        Bytereceived = '0'
-        szData = ''
-        while ord(Bytereceived) != 0:
-            ReceivedLength = 0
-            while ReceivedLength == 0:
-                Bytereceived = self.s.recv(1)
-                #print('Bytereceived=',Bytereceived,'ord(Bytereceived)=',ord(Bytereceived))
-                ReceivedLength = len(Bytereceived)
-            if ord(Bytereceived) != 0:
-                szData = szData + Bytereceived.decode('utf-8')
-        return szData
-
 
 
 
