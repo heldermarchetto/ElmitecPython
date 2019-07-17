@@ -29,7 +29,7 @@ import bisect as bs
 
 class readUviewClass():
     def __init__(self) -> None:
-        """Initializes the readUview object by reading the file contents"""
+        """Initializes the readUview object"""
 
     def __repr__(self):
         try:
