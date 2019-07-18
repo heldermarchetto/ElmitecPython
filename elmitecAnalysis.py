@@ -147,7 +147,76 @@ def getDatFilesInDir(mypath = r'K:\Data\TurningPointResolution'):
         if file.endswith(".dat"):
             fileList.append(os.path.join(mypath, file))
     return fileList
+
+#Run examples
 fn = getDatFilesInDir()
 stack = imgStackClass(fn)
-limits= stack.getLimits(clip=2)
-plt.imshow(stack.getImage(0), cmap=plt.cm.gray, vmin=limits[0], vmax=limits[1])
+
+
+#import pylab as pl
+#from IPython import display
+#from IPython import get_ipython
+#get_ipython().run_line_magic('matplotlib', 'qt5')
+
+#limits= stack.getLimits(pos=0,clip=2)
+##imgObj = plt.imshow(stack.getImage(0), cmap=plt.cm.gray, vmin=limits[0], vmax=limits[1])
+#fig,ax = plt.subplots(1,1)
+#ax.imshow(stack.getImage(0), cmap=plt.cm.gray, vmin=limits[0], vmax=limits[1])
+#fig.canvas.draw()
+#ax.imshow(stack.getImage(1), cmap=plt.cm.gray, vmin=limits[0], vmax=limits[1])
+
+#image = sitk.GetImageFromArray(stack.getImage(1), isVector=True)
+
+
+import tkinter
+import PIL.Image, PIL.ImageTk
+#import cv2
+#from skimage.transform import resize
+
+class elmitecImageViewer():
+    def __init__(self,stack):
+        self.stack = stack
+    
+    # Callback for the "Blur" button
+    def forwardImage(self):
+        self.stack.current = self.stack.current+1
+        if self.stack.current >= self.stack.nImages:
+            self.stack.current = 0
+        self.photo = PIL.ImageTk.PhotoImage(image = PIL.Image.fromarray(self.stack.getImage(self.stack.current)))
+        self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
+    
+    def backwardImage(self):
+        self.stack.current = self.stack.current-1
+        if self.stack.current < 0:
+            self.stack.current = self.stack.nImages-1
+        self.photo = PIL.ImageTk.PhotoImage(image = PIL.Image.fromarray(self.stack.getImage(self.stack.current)))
+        self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
+    
+    
+    def showImageWithButton(self,imgNr=0):
+        img = self.stack.getImage(imgNr)
+        # Create a window
+        window = tkinter.Toplevel()
+        window.title("Image number %04i" %imgNr)
+        # Get the image dimensions (OpenCV stores image data as NumPy ndarray)
+        height = self.stack.imageHeight
+        width = self.stack.imageWidth
+        btn_forwardImage=tkinter.Button(window, text="Forward", width=50, command=self.forwardImage)
+        btn_forwardImage.pack(anchor=tkinter.CENTER, expand=True)
+        btn_backwardImage=tkinter.Button(window, text="Backward", width=50, command=self.backwardImage)
+        btn_backwardImage.pack(anchor=tkinter.CENTER, expand=True)
+        self.canvas = tkinter.Canvas(window, width = width, height = height)
+        self.canvas.pack()
+        # Use PIL (Pillow) to convert the NumPy ndarray to a PhotoImage
+        self.photo = PIL.ImageTk.PhotoImage(image = PIL.Image.fromarray(img))
+        
+        # Add a PhotoImage to the Canvas
+        self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
+        
+        # Button that lets the user blur the image
+    
+        # Run the window loop
+        window.mainloop()
+
+imgViewer = elmitecImageViewer(stack)
+imgViewer.showImageWithButton(0)
