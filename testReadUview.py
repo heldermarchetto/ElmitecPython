@@ -28,4 +28,7 @@ plt.imshow(img, cmap=plt.cm.gray)
 for p in ruObj.paramList:
     print(p)
 
-
+import re
+for p in ruObj.paramList:
+    if re.search('start', p['name'], re.IGNORECASE):
+        print('Start Voltage = %0.2f %s' %(p['value'],p['units']))
