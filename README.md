@@ -7,6 +7,7 @@ You will find the following objects available:
 **readUview**:
 
    This object can be installed as a package (see instructions below) and confortably used as an object to read .dat files produced with Uview.
+   You will also need (not just for executing these procedures) numpy and matplotlib. Install these using the recommended method for anaconda (which is not using PIP).
 
 **elmitecConnect**:
 
