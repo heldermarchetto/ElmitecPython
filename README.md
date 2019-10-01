@@ -21,13 +21,15 @@ Helder
 # Installing package instructions
 
 Download the file readUview-1.0.tar.gz (or the latest available version)
-Open Anaconda navigator, select the environment and open a terminal (press on the arrow!)
+Open Anaconda navigator, select the environment and open a terminal:
+
+![Open terminal](/images/openTerminal.jpg)
+
 Once the terminal is open type (and use the appropriate path to the file you just downloaded!!!):
 
 pip install C:\Users\helder\Downloads\readUview-1.0.tar.gz
 
-
-
+![PIP install](/images/pipInstall.jpg)
 
 
 
