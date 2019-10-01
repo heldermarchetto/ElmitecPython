@@ -8,10 +8,17 @@ You will find the following objects available:
 
    This object can be installed as a package (see instructions below) and confortably used as an object to read .dat files produced with Uview.
    You will also need (not just for executing these procedures) numpy and matplotlib. Install these using the recommended method for anaconda (which is not using PIP).
+   
+   Disclaimer: Not all versions have been tested. I reading of an image file fails, please try modifying the procedure yourself or send me the file and I will try to fix the problem. Generally, some bugs are only found when testing real life data.
 
 **elmitecConnect**:
 
    This object allows to connect to a local or remote machine control imaging parameters (LEEM2000 devices) and image acquisition (UView)
+
+**elmitecAnalysis**:
+
+This is an early attempt at analysing Elmitec data with Python. Installation of an extra package is required: scikit-image
+Further input is very welcome!
 
 For any questions please contact Helder Marchetto @ Elmitec.
 
@@ -19,7 +26,7 @@ If you wish to contribute, you are very welcome.
 
 Helder
 
-# Installing package instructions
+# Instruction for installing (Elmitec) packages
 
 Download the file readUview-1.0.tar.gz (or the latest available version)
 Open Anaconda navigator, select the environment and open a terminal:
