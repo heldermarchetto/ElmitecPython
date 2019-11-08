@@ -14,6 +14,37 @@ You will find the following objects available:
 **elmitecConnect**:
 
    This object allows to connect to a local or remote machine control imaging parameters (LEEM2000 devices) and image acquisition (UView)
+   Open the elmitecConnect.py file and run it.
+   Then you can initiate an "elmitecConnect" object as follows:
+
+```python
+>>> import elmitecConnect as ec
+>>> oec = ec.elmitecConnect()
+Connect with ip=192.168.178.26, LEEMport=5566, UVIEWport=5570
+Connect with ip=192.168.178.26, port=5566
+connecting leem with
+192.168.178.26
+5566
+Connected. 90 modules found 
+#########################################
+To see which devices are available, type:
+for i in oLeem.Modules.values(): print(i)
+for i in oLeem.Mnemonic.values(): print(i)
+#########################################
+To check the value of a device, type:
+print(oLeem.getValue('FL')
+Connect with ip=192.168.178.26, port=5570
+>>>oec.oLeem.getValue('FL')
+2960.0
+>>>oec.oUview.getROI()
+[0, 0, 1600, 1200]
+>>>
+```
+
+You can change IP and port in the opening statement by calling 
+```python
+>>>oec = ec.elmitecConnect(ip='192.168.178.26', LEEMport=5566, UVIEWport=5570)
+```
 
 **elmitecAnalysis**:
 
