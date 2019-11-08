@@ -516,7 +516,7 @@ class oUview(object):
             return None
         else:
             TCPString = 'ida 0 0'
-            self.s.send(TCPString)
+            self.s.send(TCPString.encode('utf-8'))
             header = ''
             for i in range(19):
                 header += self.s.recv(1)
@@ -563,7 +563,7 @@ class oUview(object):
             return None
         else:
             TCPString = 'avr'
-            self.s.send(TCPString)
+            self.s.send(TCPString.encode('utf-8'))
             data=TCPBlockingReceive(self.s)
             if is_number(data):
                 return int(data)
@@ -576,7 +576,7 @@ class oUview(object):
             return None
         else:
             TCPString = 'asi '+str(id)
-            self.s.send(TCPString)
+            self.s.send(TCPString.encode('utf-8'))
             return TCPBlockingReceive(self.s)
 
     def setAcqState(self, acqState=-1):
@@ -590,7 +590,7 @@ class oUview(object):
             if (acqState != '0') or (acqState != '1'):
                 return
             TCPString = 'aip '+str(acqState)
-            self.s.send(TCPString)
+            self.s.send(TCPString.encode('utf-8'))
             return TCPBlockingReceive(self.s)
 
     def getAcqState(self):
@@ -602,7 +602,7 @@ class oUview(object):
             return None
         else:
             TCPString = 'aip'
-            self.s.send(TCPString)
+            self.s.send(TCPString.encode('utf-8'))
             return TCPBlockingReceive(self.s) == '1'
 
     def getROI(self):
