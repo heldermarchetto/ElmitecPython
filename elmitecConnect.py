@@ -517,7 +517,7 @@ class oUview(object):
         else:
             TCPString = 'ida 0 0'
             self.s.send(TCPString.encode('utf-8'))
-            header = ''
+            header = ''.encode('utf-8')
             for i in range(19):
                 header += self.s.recv(1)
             arr = header.split()
