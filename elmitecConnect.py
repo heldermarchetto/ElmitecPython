@@ -157,12 +157,12 @@ class oLeem():
         #print("Destroying", self)
         if self.Leem2000Connected:
             #print('Exit without closing connections... close connections')
-            self.s.send('clo')
+            self.s.send('clo'.encode('utf-8'))
             self.s.close()
             self.Leem2000Connected = False
         if self.Leem2000Connected:
             #print('Exit without closing connections... close connections')
-            self.s.send('clo')
+            self.s.send('clo'.encode('utf-8'))
             self.s.close()
             self.Leem2000Connected = False
 
@@ -240,9 +240,10 @@ class oLeem():
 
     def disconnect(self):
         if self.Leem2000Connected:
-            self.s.send('clo')
+            self.s.send('clo'.encode('utf-8'))
             self.s.close()
             self.Leem2000Connected = False
+            print("Disconnected!")
 
     def updateValues(self):
         if not self.Leem2000Connected:
@@ -437,7 +438,7 @@ class oUview(object):
         #print("Destroying", self)
         if self.UviewConnected:
             #print('Exit without closing connections... close connections')
-            self.s.send('clo')
+            self.s.send('clo'.encode('utf-8'))
             self.s.close()
             self.UviewConnected = False
         
@@ -504,7 +505,7 @@ class oUview(object):
 
     def disconnect(self):
         if self.UviewConnected:
-            self.s.send('clo')
+            self.s.send('clo'.encode('utf-8'))
             self.s.close()
             self.UviewConnected = False
             print("Disconnected!")
