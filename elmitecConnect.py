@@ -520,6 +520,7 @@ class oUview(object):
             header = ''.encode('utf-8')
             for i in range(19):
                 header += self.s.recv(1)
+            print(header)
             arr = header.split()
             if len(arr) != 3:
                 print('Wrong header. Exit')
@@ -533,6 +534,7 @@ class oUview(object):
             else:
                 for i in range(ys):
                     img[:,i] = struct.unpack('{0}H'.format(xs), self.s.recv(xs*2))
+            void = self.s.recv(1)
             return img
 
     def exportImage(self, fileName, imgFormat='0', imgContents='0'):
@@ -541,7 +543,7 @@ class oUview(object):
             return None
         else:
             TCPString = 'exp '+str(imgFormat)+', '+str(imgContents)+', '+str(fileName)
-            self.s.send(TCPString)
+            self.s.send(TCPString.encode('utf-8'))
             data=TCPBlockingReceive(self.s)
             return len(data) == 0
 
@@ -702,4 +704,13 @@ class oUview(object):
                     'pos':[int(splitMarker[3]), int(splitMarker[4]), int(splitMarker[5]), int(splitMarker[6])]}
 
 
+"""
+import elmitecConnect as ec
+oec = 0
+oec = ec.elmitecConnect()
+img = oec.oUview.getImage()
 
+import matplotlib
+import matplotlib.pyplot as plt
+plt.imshow(img, cmap=plt.cm.gray)
+"""
