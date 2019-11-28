@@ -221,15 +221,19 @@ class readUviewClass():
             device['units'] = self.getUnits(bytes(self.leemData[endName-1:endName]).decode("utf-8"))
             endVal = endName+5
             device['value'] = struct.unpack('f',self.leemData[endName+1:endName+5])[0]
+            print(type(device['value']))
             return device, endVal
         elif devNr == 100:
             #Mitutoyo micrometer readout
-            device = {'number':0, 'name':'Mitutoyo', 'units':'mm', 'value':0}
+            device = {'number':0, 'name':'Mitutoyo_x', 'units':'mm', 'value':''}
             device['number'] = int(devNr)
             valX = struct.unpack('f',self.leemData[startPos+1:startPos+5])[0]
-            valY = struct.unpack('f',self.leemData[startPos+1:startPos+5])[0]
+            valY = struct.unpack('f',self.leemData[startPos+5:startPos+9])[0]
             device['value'] = str(valX)+','+str(valY)
             endPos = startPos+9
+            print("Mitutoyo readouts:")
+            print(valX)
+            print(valY)
             return device, endPos
         elif devNr == 101:
             #FOV
@@ -321,40 +325,41 @@ class readUviewClass():
             print("############################################")
         elif devNr == 113:
             #FoV Rotation (from LEEM presets)
-            print("FoV Rotation (from LEEM presets)")
-            print("############################################")
-            print("### NOT TESTED - device 113 - NOT TESTED ###")
-            print("############################################")
+            device = {'number':0, 'name':'FOV rotation (from LEEM presets)', 'units':'deg', 'value':0}
+            device['number'] = int(devNr)
+            valX = struct.unpack('f',self.leemData[startPos+1:startPos+5])[0]
+            device['value'] = str(valX)
+            endPos = startPos+5
+            return device, endPos
         elif devNr == 114:
             #Mirror state
-            print("Mirror state")
-            print("############################################")
-            print("### NOT TESTED - device 114 - NOT TESTED ###")
-            print("############################################")
+            device = {'number':0, 'name':'Mirror state', 'units':'Mirror', 'value':0}
+            device['number'] = int(devNr)
+            valX = int.from_bytes(   self.leemData[startPos+1:startPos+3], byteorder='little')
+            device['value'] = str(valX)
+            print(device['value'])
+            endPos = startPos+3
+            return device, endPos
         elif devNr == 115:
             #MCP screen voltage in kV
-            print("MCP screen voltage in kV")
-            print("############################################")
-            print("### NOT TESTED - device 115 - NOT TESTED ###")
-            print("############################################")
+            device = {'number':0, 'name':'ScreenVoltage', 'units':'kV', 'value':0}
+            device['number'] = int(devNr)
+            valX = struct.unpack('f',self.leemData[startPos+1:startPos+5])[0]
+            device['value'] = str(valX)
+            endPos = startPos+5
+            return device, endPos
         elif devNr == 116:
             #MCP channelplate voltage in kV
-            print("MCP channelplate voltage in kV")
-            print("############################################")
-            print("### NOT TESTED - device 116 - NOT TESTED ###")
-            print("############################################")
+            device = {'number':0, 'name':'ChannelPlate', 'units':'kV', 'value':0}
+            device['number'] = int(devNr)
+            valX = struct.unpack('f',self.leemData[startPos+1:startPos+5])[0]
+            device['value'] = str(valX)
+            endPos = startPos+5
+            return device, endPos
         elif (devNr >= 120) and (devNr <= 130):
             #additional gauges
             print("additional gauges")
         return 0,startPos
-
-
-#Usage:
-#
-#self.fn = r'K:\Data\SMART-2\2019\0507_HM_MP_TS_FU-Berlin\20190507a001.dat'
-#for p in lp.paramList:
-#    print(p)
-#
-#img = readUview(fileContent, fh, ih)
-#import matplotlib.pyplot as plt
-#plt.imshow(img, cmap=plt.cm.gray)
+      
+   
+    
