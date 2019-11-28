@@ -16,7 +16,6 @@ import readUview as ru
 import matplotlib.pyplot as plt
 
 fn = r'C:\Insert\Your\Path\To\Your\File\Here\myFile.dat'
-#fn = r'K:\Data\Hokkaido\test011.dat'
 
 ruObj = ru.readUviewClass()
 img = ruObj.getImage(fn)
