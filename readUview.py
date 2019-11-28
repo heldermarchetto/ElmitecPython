@@ -221,7 +221,6 @@ class readUviewClass():
             device['units'] = self.getUnits(bytes(self.leemData[endName-1:endName]).decode("utf-8"))
             endVal = endName+5
             device['value'] = struct.unpack('f',self.leemData[endName+1:endName+5])[0]
-            print(type(device['value']))
             return device, endVal
         elif devNr == 100:
             #Mitutoyo micrometer readout
@@ -231,9 +230,6 @@ class readUviewClass():
             valY = struct.unpack('f',self.leemData[startPos+5:startPos+9])[0]
             device['value'] = str(valX)+','+str(valY)
             endPos = startPos+9
-            print("Mitutoyo readouts:")
-            print(valX)
-            print(valY)
             return device, endPos
         elif devNr == 101:
             #FOV
@@ -337,7 +333,6 @@ class readUviewClass():
             device['number'] = int(devNr)
             valX = int.from_bytes(   self.leemData[startPos+1:startPos+3], byteorder='little')
             device['value'] = str(valX)
-            print(device['value'])
             endPos = startPos+3
             return device, endPos
         elif devNr == 115:
