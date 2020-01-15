@@ -168,55 +168,105 @@ stack = imgStackClass(fn)
 #image = sitk.GetImageFromArray(stack.getImage(1), isVector=True)
 
 
-import tkinter
+import tkinter as tk
+from tkinter import filedialog
 import PIL.Image, PIL.ImageTk
+import PIL.ImageOps
 #import cv2
-#from skimage.transform import resize
+from skimage.transform import rescale
+from skimage import exposure
+
+
+
+
+
 
 class elmitecImageViewer():
     def __init__(self,stack):
+        imgNr = 0
+        self.winSize    = (1024,1024)
+        self.winPadding = (100,200)
         self.stack = stack
-    
-    # Callback for the "Blur" button
-    def forwardImage(self):
-        self.stack.current = self.stack.current+1
-        if self.stack.current >= self.stack.nImages:
-            self.stack.current = 0
-        self.photo = PIL.ImageTk.PhotoImage(image = PIL.Image.fromarray(self.stack.getImage(self.stack.current)))
-        self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
-    
-    def backwardImage(self):
-        self.stack.current = self.stack.current-1
-        if self.stack.current < 0:
-            self.stack.current = self.stack.nImages-1
-        self.photo = PIL.ImageTk.PhotoImage(image = PIL.Image.fromarray(self.stack.getImage(self.stack.current)))
-        self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
-    
-    
-    def showImageWithButton(self,imgNr=0):
+        self.root = tk.Tk()
+        self.mainFrame = tk.Frame(self.root, height=self.winSize[0]+self.winPadding[0], width=self.winSize[1]+self.winPadding[1], bg='white')
+        self.mainFrame.pack()
+        self.topFrame      = tk.Frame(self.mainFrame,  height=100,  width=200,  bg='white')
+        self.topFrame.pack(fill=tk.X)
+        self.listbox = tk.Listbox(self.mainFrame)
+        self.listbox.pack(side=tk.LEFT,fill=tk.Y)
+        self.listbox.bind('<<ListboxSelect>>', self.selectList)
+        self.imageCanvas = tk.Canvas(self.mainFrame, height=self.winSize[0], width=self.winSize[0], bg='orange')
+        self.imageCanvas.pack(side=tk.RIGHT,expand=True)
+        self.mainFrame.winfo_toplevel().title("Image number %04i" %imgNr)
+
+        for n, item in enumerate(self.stack.fn):
+            self.listbox.insert(tk.END, "{:04d} - {}".format(n,os.path.basename(item)))
+        openButton = tk.Button(self.topFrame, text="Open", command=self.openImageList)
+        openButton.grid(row=0, column=0, pady=20)
+        prevButton = tk.Button(self.topFrame, text="Previous")
+        prevButton.grid(row=0, column=2, pady=20)
+        nextButton = tk.Button(self.topFrame, text="Next")
+        nextButton.grid(row=0, column=1, pady=20)
+
         img = self.stack.getImage(imgNr)
-        # Create a window
-        window = tkinter.Toplevel()
-        window.title("Image number %04i" %imgNr)
-        # Get the image dimensions (OpenCV stores image data as NumPy ndarray)
-        height = self.stack.imageHeight
-        width = self.stack.imageWidth
-        btn_forwardImage=tkinter.Button(window, text="Forward", width=50, command=self.forwardImage)
-        btn_forwardImage.pack(anchor=tkinter.CENTER, expand=True)
-        btn_backwardImage=tkinter.Button(window, text="Backward", width=50, command=self.backwardImage)
-        btn_backwardImage.pack(anchor=tkinter.CENTER, expand=True)
-        self.canvas = tkinter.Canvas(window, width = width, height = height)
-        self.canvas.pack()
-        # Use PIL (Pillow) to convert the NumPy ndarray to a PhotoImage
-        self.photo = PIL.ImageTk.PhotoImage(image = PIL.Image.fromarray(img))
+        p2, p98 = np.percentile(img, (2, 98))
+        img_rescale_int = exposure.rescale_intensity(img, in_range=(p2, p98), out_range=(0,255))
+        intensityFixedImg = PIL.Image.fromarray(img_rescale_int)
+        self.photo = PIL.ImageTk.PhotoImage(intensityFixedImg, master=self.root)
         
-        # Add a PhotoImage to the Canvas
-        self.canvas.create_image(0, 0, image=self.photo, anchor=tkinter.NW)
-        
-        # Button that lets the user blur the image
+        self.imageOnCanvas = self.imageCanvas.create_image(0, 0, image=self.photo, anchor=tk.NW)
+        self.listbox.selection_clear(0,last=self.stack.nImages-1)
+        self.listbox.selection_set(0)
+        self.windowRunning = True
+        self.root.mainloop()
+        self.windowRunning = False
+
+    def showImage(self, imgNr=-1):
+        if not self.windowRunning:
+            return
+        current = self.stack.current
+        if imgNr >= 0:
+            current = imgNr
+        img = self.stack.getImage(current)
+        if (self.stack.imageWidth > self.winSize[0]) or (self.stack.imageHeight > self.winSize[1]):
+            rescaleFactorX = self.winSize[0]/self.stack.imageWidth
+            rescaleFactorY = self.winSize[1]/self.stack.imageHeight
+            rescaleFactor = min(rescaleFactorX,rescaleFactorY)
+            img = rescale(img,rescaleFactor,preserve_range=True)
+        p2, p98 = np.percentile(img, (2, 98))
+        img_rescale_int = exposure.rescale_intensity(img, in_range=(p2, p98), out_range=(0,255))
+        intensityFixedImg = PIL.Image.fromarray(img_rescale_int)
+        self.photo = PIL.ImageTk.PhotoImage(intensityFixedImg, master=self.root)
+        self.imageCanvas.itemconfig(self.imageOnCanvas, image=self.photo)
     
-        # Run the window loop
-        window.mainloop()
+    def selectList(self, evt):
+        w = evt.widget
+        index = int(w.curselection()[0])
+        value = w.get(index)
+        self.stack.current = index
+        if self.stack.current < 0:
+            self.stack.current = 0
+        if self.stack.current > self.stack.nImages-1:
+            self.stack.current = self.stack.nImages-1
+        self.showImage()
+        self.updateTitle(value)
+        
+    def updateTitle(self, value=''):
+        self.mainFrame.winfo_toplevel().title("Image number %04i (%s)" % (self.stack.current,os.path.basename(self.stack.fn[self.stack.current])))
+    
+    def openImageList(self):
+        filenames = list(tk.filedialog.askopenfilenames(title="Select files", filetypes=(("uView","*.dat"),("Tiff files","*.tif"))))
+        print(type(filenames))
+        self.stack = imgStackClass(filenames)
+        self.listbox.delete(0,tk.END)
+        for n, item in enumerate(self.stack.fn):
+            self.listbox.insert(tk.END, "{:04d} - {}".format(n,os.path.basename(item)))
+        self.listbox.selection_set(0)
+        self.showImage(0)
+        
+        
+        
 
 imgViewer = elmitecImageViewer(stack)
-imgViewer.showImageWithButton(0)
+imgViewer.showImage()
+
